@@ -40,10 +40,44 @@ skimr::skim(mma_data)
 ###############################################################################
 # EXERCISE 2
 ###############################################################################
+# What was the total number of hospitals each year?
+mma_data |>
+  group_by(year) |>
+  mutate(prov_total = n_distinct(prov_id)) |>
+  skimr::skim(prov_total)
+# N_t each year [2001-2010] constant = 1305
 
-# 2. Using the formulas provided in the attached excerpt (i.e. datatask_saidin.pdf), construct a
-# Saidin Index score for all hospitals in each year.
-# Output: Name the variable you create in this step saidin and save it with your merged
-# dataset to a separate file.
-# Hint: Just apply the formulas given to the data. There are variations on the Saidin Index
-# with further nuances, but you don’t need to worry about any of those complications here.
+# write algorithm for tech_1
+mma_saidin <- mma_data |>
+  group_by(year) |>
+  mutate(sum_1 = sum(tech_1)) |> #num hospitals with tech_1
+  mutate(weight_1 = 1 - (1/1305) * sum_1) |> #weight a_k,t
+  mutate(index_1 = tech_1 * weight_1) #intermediate value before sum
+
+# repeat for all `tech_n`
+for (i in 1:31) {
+  mma_saidin <- mma_saidin |>
+    group_by(year) |>
+    mutate(
+      !!paste0("sum_", i) := sum(!!sym(paste0("tech_", i))),
+      !!paste0("weight_", i) := 1 - (1/1305) * !!sym(paste0("sum_", i)),
+      !!paste0("index_", i) := !!sym(paste0("tech_", i)) * !!sym(paste0("weight_", i))
+    )
+}
+
+# sum across `index_n` to find saidin index for each hospital per year
+mma_saidin <- mma_saidin |>
+  select(prov_id, year, starts_with("index")) |>
+  pivot_longer(cols = starts_with("index"), names_to = "index") |>
+  group_by(prov_id, year) |>
+  summarise(sum(value)) |>
+  rename(saidin = `sum(value)`)
+
+# join to merged data
+mma_data <- mma_saidin |>
+  left_join(mma_data)
+
+glimpse(mma_data)
+
+# write out data
+save(mma_data, file = here("task1/data/mma_data.rds"))
