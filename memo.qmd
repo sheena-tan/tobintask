@@ -34,7 +34,7 @@ This project uses data provided by Yale's Tobin Center for Economic Policy as pa
 
 ## Task 1
 
-### Exercise 1 
+### Exercise 1
 
 ```{r, eval = FALSE}
 skimr::skim(mma_main)
@@ -55,7 +55,7 @@ mma_data <- mma_treat_join |>
 
 ```
 
-An initial inspection of the data revealed no missingness. The provided data files were joined using provider ID as a primary key, resulting in a merged dataset with 13050 unique observations of 38 variables. 
+An initial inspection of the data revealed no missingness. The provided data files were joined using provider ID as a primary key, resulting in a merged dataset with 13050 unique observations of 38 variables.
 
 ### Exercise 2
 
@@ -104,8 +104,40 @@ save(mma_data, file = here("task1/data/mma_data.rds"))
 
 A variable `saidin` was constructed to represent the Saidin Index Score[^1] for all hospitals in each year and joined with the merged dataset to create the working dataset with **13050 observations** of **39 variables**. This index characterizes a hospital's range of available technologies, weighted for their rarity, and provides a way through which to investigate how hospital technology grows and changes, particularly in response to interventions.
 
-[^1]: Spetz, J. and Bakerm, L. (1999). Has Managed Care Affected the Availability of Medical Technology? *San Francisco: Public Policy Institute of California*.
+[^1]: Baker, L. & Spetz, J. (1999). Managed care and medical technology growth. *Frontiers in Health
+Policy Research, 2*, 31.
 
 ### Exercise 3
+
+::: {.callout-note icon="false"}
+## Part A Instructions
+
+Describe how the distribution of Saidin Index scores varies across the sample of hospitals.
+
+:::
+
+![](task1/figures/saidin_density_ridge.png)
+
+![](task1/figures/saidin_boxplot.png)
+
+::: {.callout-note icon="false"}
+## Part B Instructions
+
+Looking at the Saidin Index scores you’ve calculated, do different types of hospitals have different rates of technology adoption?
+
+:::
+
+::: {.callout-note icon="false"}
+## Part C Instructions
+
+Do hospitals with more beds tend to have higher Saidin index scores?
+
+:::
+
+### Exercise 4
+
+### Exercise 5
+
+### Exercise 6
 
 ## Task 2
