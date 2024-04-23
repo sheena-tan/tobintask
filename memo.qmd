@@ -1,0 +1,41 @@
+---
+title: "Tobin Predoctoral Data Task"
+subtitle: "Experiments to Enhance the Efficiency of Medicaid"
+author: "Sheena Tan"
+
+date: today
+
+format:
+  html:
+    toc: true
+    toc-depth: 4
+    toc-location: left
+    embed-resources: true
+    code-fold: false
+    link-external-newwindow: true
+
+execute:
+  warning: false
+  
+from: markdown+emoji
+reference-location: margin
+citation-location: margin
+---
+
+::: {.callout-tip icon="false"}
+## Github Repo Link
+
+<https://github.com/sheena-tan/tobintask.git>
+:::
+
+# Introduction
+
+This project uses data provided by Yale's Tobin Center for Economic Policy as part of a data task for a pre-doctoral research position. The data for Task 1 draws from a larger research project aiming to understand hospital response to reimbursement rate adjustment received as part of the Medicare Modernization Act (MMA) of 2003, and whether their adoption of medical technologies increased as a result of those adjustments. Task 2 uses data... TKTK ...
+
+## Data Cleaning
+
+## Task 1
+
+### Exercise 1
+
+## Task 2
