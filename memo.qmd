@@ -30,7 +30,7 @@ citation-location: margin
 
 # Introduction
 
-This project uses data provided by Yale's Tobin Center for Economic Policy as part of a data task for a pre-doctoral research position. The data draws from a larger research project aiming to understand hospital response to reimbursement rate adjustment received as part of the Medicare Modernization Act (MMA) of 2003, and whether their adoption of medical technologies increased as a result of those adjustments for Task 1. Task 2 uses data... TKTK ...
+This project uses data provided by Yale's Tobin Center for Economic Policy as part of a data task for a predoctoral research position. The data draws from a larger research project aiming to understand hospital response to reimbursement rate adjustment received as part of the Medicare Modernization Act (MMA) of 2003, and whether their adoption of medical technologies increased as a result of those adjustments for Task 1. Task 2 uses data... TKTK ...
 
 ## Task 1
 
@@ -66,7 +66,7 @@ mma_data |>
   skimr::skim(prov_total)
 # N_t each year [2001-2010] constant = 1305
 
-# write algorithm for tech_1
+# algorithm for only `tech_1`
 mma_saidin <- mma_data |>
   group_by(year) |>
   mutate(sum_1 = sum(tech_1)) |> #num hospitals with tech_1
@@ -80,13 +80,12 @@ for (i in 1:31) {
     mutate(
       !!paste0("sum_", i) := sum(!!sym(paste0("tech_", i))),
       !!paste0("weight_", i) := 1 - (1/1305) * !!sym(paste0("sum_", i)),
-      !!paste0("index_", i) := !!sym(paste0("tech_", i)) * !!sym(paste0("weight_", i))
+      !!paste0("index_",i) := !!sym(paste0("tech_",i)) * !!sym(paste0("weight_",i))
     )
 }
 
 # sum across `index_n` to find saidin index for each hospital per year
 mma_saidin <- mma_saidin |>
-  select(prov_id, year, starts_with("index")) |>
   pivot_longer(cols = starts_with("index"), names_to = "index") |>
   group_by(prov_id, year) |>
   summarise(sum(value)) |>
@@ -96,10 +95,6 @@ mma_saidin <- mma_saidin |>
 mma_data <- mma_saidin |>
   left_join(mma_data)
 
-glimpse(mma_data)
-
-# write out data
-save(mma_data, file = here("task1/data/mma_data.rds"))
 ```
 
 A variable `saidin` was constructed to represent the Saidin Index Score[^1] for all hospitals in each year and joined with the merged dataset to create the working dataset with **13050 observations** of **39 variables**. This index characterizes a hospital's range of available technologies, weighted for their rarity, and provides a way through which to investigate how hospital technology grows and changes, particularly in response to interventions.
@@ -116,9 +111,36 @@ Describe how the distribution of Saidin Index scores varies across the sample of
 
 :::
 
-![](task1/figures/saidin_density_ridge.png)
+```{r, eval = FALSE}
+mma_2004 <- mma_data |> 
+  filter(year == 2004)
 
-![](task1/figures/saidin_boxplot.png)
+describe(mma_2004$saidin, IQR = TRUE, skew = FALSE)
+```
+
+```{r, echo = FALSE}
+library(psych)
+library(dplyr)
+library(here)
+load(here("task1/data/mma_data.rds"))
+mma_2004 <- mma_data |> 
+  filter(year == 2004)
+describe(mma_2004$saidin, IQR = TRUE, skew = FALSE)
+```
+
+The distribution of Saidin Index scores in 2004 is strongly right-skewed, with values ranging from **0 to 11.57**, a **median of 1.19**, and an **IQR of 1.84**. 
+
+![Density plot with boxplot of Saidin Index scores in 2004](task1/figures/saidin_2004.png){#fig-1}
+
+As the Saidin Index is helpful for characterizing technology growth rates, the distributions by year can also be found below:
+
+![Density ridge plot of Saidin Index scores by year](task1/figures/saidin_density_ridge.png){#fig-2}
+
+![Stacked barplots of Saidin Index scores by year](task1/figures/saidin_boxplot.png){#fig-3}
+
+Notably, a period of rapid relative growth seems to have occurred between 2002 and 2005 (@fig-3), starting in 2003 (@fig-2), the same year that the Medicare Modernization Act (MMA) was initiated. However, this rapid growth has since slowed, with growth between 2007 and 2010 becoming increasingly limited. 
+
+It is also important to note that the scores have not shifted uniformly, rather, their distribution has become more spread out, with a large number of outliers developing on the higher end (better technology availability). Should these outliers correlate with those hospitals receiving MMA treatment, the data would suggest *support for the intervention's positive impact*. 
 
 ::: {.callout-note icon="false"}
 ## Part B Instructions
