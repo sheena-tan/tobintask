@@ -1,4 +1,4 @@
-# exercise 3 (data visualization)
+# exercise 3 (data visualization, statistical testing)
 
 library(tidyverse)
 library(here)
@@ -106,14 +106,14 @@ ggsave(here("task1/figures/saidin_boxplot.png"), saidin_boxplot,
 ###############################################################################
 
 # check for mutual exclusivity
-mma_data |>
+mma_2004 |>
   filter(nonprof == 1 & govt == 1)
 
-mma_data |>
+mma_2004 |>
   filter(nonprof == 0 & govt == 0)
 
 # create independent type variable
-mma_types <- mma_data |>
+mma_types <- mma_2004 |>
   mutate(
     hospital_type = case_when(
       nonprof == 1 & govt == 0 ~ "nonprof",
@@ -123,11 +123,9 @@ mma_types <- mma_data |>
     )
   )
 
-# limit analysis to 2004
-mma_types_2004 <- mma_types |> filter(year == 2004)
-
-# visualization: should expect to see bigger diff between nonprof and other two than govt vs neither
-plot_types_2004 <- mma_types_2004 |> ggplot(aes(saidin)) +
+# visualization: expecting bigger diff between nonprof and others than govt vs neither
+plot_types_2004 <- mma_types_2004 |>
+  ggplot(aes(saidin)) +
   geom_density(aes(color = hospital_type)) +
   theme_ggdist() +
   theme(
@@ -155,7 +153,7 @@ summary(anova_types)
 # Tukey's test
 TukeyHSD(anova_types)
 
-# write out plots
+# write out plot
 ggsave(here("task1/figures/plot_types_2004.png"), plot_types_2004,
        width = 7.8, height = 6.0, units = "in")
 
@@ -163,5 +161,26 @@ ggsave(here("task1/figures/plot_types_2004.png"), plot_types_2004,
 # EXERCISE 3c
 ###############################################################################
 
-#   c) Do hospitals with more beds tend to have higher Saidin index scores?
+# visualization: expecting positive correlation
+plot_beds_2004 <- mma_2004 |>
+  ggplot(aes(x = beds, y = saidin)) +
+  geom_point(alpha = 0.4, color = "#619CFF") +
+  theme_minimal() +
+  stat_smooth(method = "lm", formula = y ~ x, geom = "smooth") +
+  scale_x_continuous(limits = c(0, 1000)) +
+  labs(
+    x = "Beds",
+    y = "Saidin Score",
+    title = "Hospitals with more beds seem to have higher Saidin index scores.",
+    subtitle = "Hospital size and technological capacity appear positively correlated."
+  ) +
+  theme(plot.title.position = "plot")
 
+# logistic regression
+lm_beds <- lm(saidin ~ beds, data = mma_2004)
+summary(lm_beds)
+confint(lm_beds)
+
+# write out plot
+ggsave(here("task1/figures/plot_beds_2004.png"), plot_beds_2004,
+       width = 7.8, height = 6.0, units = "in")

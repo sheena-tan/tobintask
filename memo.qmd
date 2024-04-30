@@ -142,7 +142,7 @@ It is also important to note that the scores have not shifted uniformly; rather,
 
 ```{r, eval = FALSE}
 # create independent type variable
-mma_types <- mma_data |> 
+mma_types_2004 <- mma_2004 |> 
   mutate(
     hospital_type = case_when(
       nonprof == 1 & govt == 0 ~ "nonprof",
@@ -151,9 +151,6 @@ mma_types <- mma_data |>
       TRUE ~ NA_character_
     )
   )
-
-# limit analysis to 2004
-mma_types_2004 <- mma_types |> filter(year == 2004)
 
 # assuming normality due to sample size
 # one-way ANOVA
@@ -171,7 +168,7 @@ Since the analysis was limited to 2004, I operationalize "rates of technology ad
 To investigate if technology adoption rates were significantly different between the hospital types, I conduct a one-way ANOVA with the null hypothesis that the true difference in Saidin scores between hospital types is zero.
 
 ```{r, echo = FALSE}
-mma_types <- mma_data |> 
+mma_types_2004 <- mma_2004 |> 
   mutate(
     hospital_type = case_when(
       nonprof == 1 & govt == 0 ~ "nonprof",
@@ -180,7 +177,6 @@ mma_types <- mma_data |>
       TRUE ~ NA_character_
     )
   )
-mma_types_2004 <- mma_types |> filter(year == 2004)
 anova_types <- aov(saidin ~ hospital_type, data = mma_types_2004)
 summary(anova_types)
 TukeyHSD(anova_types)
@@ -194,8 +190,29 @@ These results suggest that nonprofit hospitals have different (higher) rates of 
 
 #### Part C
 
-Do hospitals with more beds tend to have higher Saidin index scores?
+```{r, eval = FALSE}
+# linear regression model
+lm_beds <- lm(saidin ~ beds, data = mma_2004)
+summary(lm_beds)
+confint(lm_beds)
+```
 
+![Scatterplot of Saidin scores and beds in 2004](task1/figures/plot_beds_2004.png){#fig-5}
+
+An initial scatterplot of Saidin scores and beds in 2004 (i.e., nonprofit, government, neither) visualizes a positive correlation between hospital size and technological capacity.
+
+Simple linear regression analysis was used to test if the number of beds explained variation in Saidin index scores.
+
+```{r, echo = FALSE}
+# linear regression model
+lm_beds <- lm(saidin ~ beds, data = mma_2004)
+summary(lm_beds)
+confint(lm_beds)
+```
+
+**Results**: A *significant* regression was found (*F*(1, 1303) = 900.8, *p* < 0.001). The R^2 value of **0.408** indicates that the predictor (`beds`) explained about 40.8% of the variation in Saidin index scores. We can be 95% certain that the true change in Saidin scores as a function of the number of beds is between **5.90e-3 and 6.73e-3**, suggesting a positive correlation.
+
+These results support the idea that the more beds a hospital has, the higher their Saidin scores tend to be, suggesting there is a positive relationship between hospital capacity and technological availability. Hospital capacity could be an indicator of greater access to resources, which lends to higher rates of technology adoption.
 
 ### Exercise 4
 
