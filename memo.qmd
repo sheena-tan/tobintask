@@ -30,7 +30,7 @@ citation-location: margin
 
 # Introduction
 
-This project uses data provided by Yale's Tobin Center for Economic Policy as part of a data task for a predoctoral research position. The data draws from a larger research project aiming to understand hospital response to reimbursement rate adjustment received as part of the Medicare Modernization Act (MMA) of 2003, and whether their adoption of medical technologies increased as a result of those adjustments for Task 1. Task 2 uses data... TKTK ...
+This project uses data provided by Yale's Tobin Center for Economic Policy as part of a data task for a pre-doctoral research position. The data draws from a larger research project aiming to understand hospital response to reimbursement rate adjustment received as part of the Medicare Modernization Act (MMA) of 2003, and whether their adoption of medical technologies increased as a result of those adjustments for Task 1. Task 2 uses data... TKTK ...
 
 ## Task 1
 
@@ -66,21 +66,17 @@ mma_data |>
   skimr::skim(prov_total)
 # N_t each year [2001-2010] constant = 1305
 
-# algorithm for only `tech_1`
-mma_saidin <- mma_data |>
-  group_by(year) |>
-  mutate(sum_1 = sum(tech_1)) |> #num hospitals with tech_1
-  mutate(weight_1 = 1 - (1/1305) * sum_1) |> #weight a_k,t
-  mutate(index_1 = tech_1 * weight_1) #intermediate value before sum
-
-# repeat for all `tech_n`
+# create intermediate index variable before sum for all `tech_n`
 for (i in 1:31) {
   mma_saidin <- mma_saidin |>
     group_by(year) |>
     mutate(
-      !!paste0("sum_", i) := sum(!!sym(paste0("tech_", i))),
-      !!paste0("weight_", i) := 1 - (1/1305) * !!sym(paste0("sum_", i)),
-      !!paste0("index_",i) := !!sym(paste0("tech_",i)) * !!sym(paste0("weight_",i))
+      # number of hospitals with tech_n
+      !!paste0("sum_", i) := sum(!!sym(paste0("tech_", i))), 
+      # weight a_k,t
+      !!paste0("weight_", i) := 1 - (1/1305) * !!sym(paste0("sum_", i)), 
+      !!paste0("index_", i) := 
+        !!sym(paste0("tech_", i)) * !!sym(paste0("weight_", i))
     )
 }
 
@@ -104,12 +100,7 @@ Policy Research, 2*, 31.
 
 ### Exercise 3
 
-::: {.callout-note icon="false"}
-## Part A Instructions
-
-Describe how the distribution of Saidin Index scores varies across the sample of hospitals.
-
-:::
+#### Part A
 
 ```{r, eval = FALSE}
 mma_2004 <- mma_data |> 
@@ -130,31 +121,81 @@ describe(mma_2004$saidin, IQR = TRUE, skew = FALSE)
 
 The distribution of Saidin Index scores in 2004 is strongly right-skewed, with values ranging from **0 to 11.57**, a **median of 1.19**, and an **IQR of 1.84**. 
 
-![Density plot with boxplot of Saidin Index scores in 2004](task1/figures/saidin_2004.png){#fig-1}
+![Density-boxplot of Saidin Index scores in 2004](task1/figures/saidin_2004.png){#fig-1}
 
 As the Saidin Index is helpful for characterizing technology growth rates, the distributions by year can also be found below:
+
+::: {.callout-tip collapse=true}
+## ADDITIONAL EXPLORATORY ANALYSIS
 
 ![Density ridge plot of Saidin Index scores by year](task1/figures/saidin_density_ridge.png){#fig-2}
 
 ![Stacked barplots of Saidin Index scores by year](task1/figures/saidin_boxplot.png){#fig-3}
 
-Notably, a period of rapid relative growth seems to have occurred between 2002 and 2005 (@fig-3), starting in 2003 (@fig-2), the same year that the Medicare Modernization Act (MMA) was initiated. However, this rapid growth has since slowed, with growth between 2007 and 2010 becoming increasingly limited. 
+A period of rapid relative growth looks to have occurred between 2002 and 2005 (@fig-3), starting in 2003 (@fig-2), the same year that the Medicare Modernization Act (MMA) was initiated. However, this rapid growth has since slowed, with growth between 2007 and 2010 becoming increasingly limited. 
 
-It is also important to note that the scores have not shifted uniformly, rather, their distribution has become more spread out, with a large number of outliers developing on the higher end (better technology availability). Should these outliers correlate with those hospitals receiving MMA treatment, the data would suggest *support for the intervention's positive impact*. 
-
-::: {.callout-note icon="false"}
-## Part B Instructions
-
-Looking at the Saidin Index scores you’ve calculated, do different types of hospitals have different rates of technology adoption?
+It is also important to note that the scores have not shifted uniformly; rather, their distribution has become more spread out, with a large number of outliers developing on the higher end (better technology availability). Should these outliers correlate with those hospitals receiving MMA treatment, the data would suggest ***support for the intervention's positive impact***. 
 
 :::
 
-::: {.callout-note icon="false"}
-## Part C Instructions
+#### Part B
+
+```{r, eval = FALSE}
+# create independent type variable
+mma_types <- mma_data |> 
+  mutate(
+    hospital_type = case_when(
+      nonprof == 1 & govt == 0 ~ "nonprof",
+      govt == 1 & nonprof == 0 ~ "govt",
+      govt == 0 & nonprof == 0 ~ "neither",
+      TRUE ~ NA_character_
+    )
+  )
+
+# limit analysis to 2004
+mma_types_2004 <- mma_types |> filter(year == 2004)
+
+# assuming normality due to sample size
+# one-way ANOVA
+anova_types <- aov(saidin ~ hospital_type, data = mma_types_2004)
+summary(anova_types)
+
+# Tukey's test
+TukeyHSD(anova_types)
+```
+
+![Density plots of Saidin scores by hospital type in 2004](task1/figures/plot_types_2004.png){#fig-4}
+
+Since the analysis was limited to 2004, I operationalize "rates of technology adoption" as the Saidin scores for that year. An initial density plot of Saidin scores by hospital type (i.e., nonprofit, government, neither) visualizes significant differences between non-profit hospitals and both other types. Government hospitals and hospitals that are neither non-profit nor government do not seem to differ much from each other.
+
+To investigate if technology adoption rates were significantly different between the hospital types, I conduct a one-way ANOVA with the null hypothesis that the true difference in Saidin scores between hospital types is zero.
+
+```{r, echo = FALSE}
+mma_types <- mma_data |> 
+  mutate(
+    hospital_type = case_when(
+      nonprof == 1 & govt == 0 ~ "nonprof",
+      govt == 1 & nonprof == 0 ~ "govt",
+      govt == 0 & nonprof == 0 ~ "neither",
+      TRUE ~ NA_character_
+    )
+  )
+mma_types_2004 <- mma_types |> filter(year == 2004)
+anova_types <- aov(saidin ~ hospital_type, data = mma_types_2004)
+summary(anova_types)
+TukeyHSD(anova_types)
+```
+
+**Results:** There was a *statistically significant difference* in residuals between at least two of the hospital types (*F*(2, 203) = 25.96, *p* < 0.001). 
+
+As seen in @Fig-3, Tukey’s HSD Test for multiple comparisons *confirmed* that there was a statistically significant difference between both **nonprofit and government** types (*p* < 0.001, 95% CI [0.440, 1.071]) and **nonprofit and neither** types (*p* < 0.001, 95% CI [0.536, 1.312]) but no statistically significant difference between **government and neither** types (*p* = 0.650, 95% CI [-0.614, 0.278]).
+
+These results suggest that nonprofit hospitals have different (higher) rates of technology adoption than government hospitals or hospitals that are neither, implying the possibility for government hospital technology improvement. 
+
+#### Part C
 
 Do hospitals with more beds tend to have higher Saidin index scores?
 
-:::
 
 ### Exercise 4
 

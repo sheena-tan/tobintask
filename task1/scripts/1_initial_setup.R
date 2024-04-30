@@ -47,7 +47,7 @@ mma_data |>
   skimr::skim(prov_total)
 # N_t each year [2001-2010] constant = 1305
 
-# write algorithm for tech_1
+# testing algorithm for tech_1
 mma_saidin <- mma_data |>
   group_by(year) |>
   mutate(sum_1 = sum(tech_1)) |> #num hospitals with tech_1

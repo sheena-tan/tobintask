@@ -105,9 +105,59 @@ ggsave(here("task1/figures/saidin_boxplot.png"), saidin_boxplot,
 # EXERCISE 3b
 ###############################################################################
 
-# b) Looking at the Saidin Index scores you’ve calculated, do different types of hospitals
-# have different rates of technology adoption?
+# check for mutual exclusivity
+mma_data |>
+  filter(nonprof == 1 & govt == 1)
 
+mma_data |>
+  filter(nonprof == 0 & govt == 0)
+
+# create independent type variable
+mma_types <- mma_data |>
+  mutate(
+    hospital_type = case_when(
+      nonprof == 1 & govt == 0 ~ "nonprof",
+      govt == 1 & nonprof == 0 ~ "govt",
+      govt == 0 & nonprof == 0 ~ "neither",
+      TRUE ~ NA_character_
+    )
+  )
+
+# limit analysis to 2004
+mma_types_2004 <- mma_types |> filter(year == 2004)
+
+# visualization: should expect to see bigger diff between nonprof and other two than govt vs neither
+plot_types_2004 <- mma_types_2004 |> ggplot(aes(saidin)) +
+  geom_density(aes(color = hospital_type)) +
+  theme_ggdist() +
+  theme(
+    axis.title.y = element_blank(),
+    legend.position = 'none',
+    plot.title.position = "plot",
+    plot.subtitle = element_markdown(lineheight = 0.01)
+  ) +
+  labs(
+    x = "Saidin Index Score",
+    subtitle = "<b style='color: #619CFF;'>Non-profit</b> hospitals differ more from
+    <b style='color: #F8766D;'>government</b> hospitals and hospitals that are
+    <b style='color: #00BA38;'>neither</b>
+    \nthan they do from each other in terms of <b>technology adoption</b>."
+  ) +
+  annotate("text", x = 3.4, y = 0.2, label = "non-profit", color = "#619CFF", size = 3) +
+  annotate("text", x = 1.5, y = 0.492, label = "government", color = "#F8766D" , size = 3) +
+  annotate("text", x = 1.8, y = 0.38, label = "neither", color = "#00BA38", size = 3)
+
+# assuming normality due to sample size
+# one-way ANOVA
+anova_types <- aov(saidin ~ hospital_type, data = mma_types_2004)
+summary(anova_types)
+
+# Tukey's test
+TukeyHSD(anova_types)
+
+# write out plots
+ggsave(here("task1/figures/plot_types_2004.png"), plot_types_2004,
+       width = 7.8, height = 6.0, units = "in")
 
 ###############################################################################
 # EXERCISE 3c
