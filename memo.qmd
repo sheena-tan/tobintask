@@ -36,6 +36,9 @@ This project uses data provided by Yale's Tobin Center for Economic Policy as pa
 
 ### Exercise 1
 
+::: {.callout-note collapse=true icon=false}
+## CODE FOR REPRODUCIBILITY
+
 ```{r, eval = FALSE}
 skimr::skim(mma_main)
 skimr::skim(mma_treat)
@@ -55,9 +58,14 @@ mma_data <- mma_treat_join |>
 
 ```
 
+:::
+
 An initial inspection of the data revealed no missingness. The provided data files were joined using provider ID as a primary key, resulting in a merged dataset with 13050 unique observations of 38 variables.
 
 ### Exercise 2
+
+::: {.callout-note collapse=true icon=false}
+## CODE FOR REPRODUCIBILITY
 
 ```{r, eval = FALSE}
 mma_data |>
@@ -93,6 +101,8 @@ mma_data <- mma_saidin |>
 
 ```
 
+:::
+
 A variable `saidin` was constructed to represent the Saidin Index Score[^1] for all hospitals in each year and joined with the merged dataset to create the working dataset with **13050 observations** of **39 variables**. This index characterizes a hospital's range of available technologies, weighted for their rarity, and provides a way through which to investigate how hospital technology grows and changes, particularly in response to interventions.
 
 [^1]: Baker, L. & Spetz, J. (1999). Managed care and medical technology growth. *Frontiers in Health
@@ -102,6 +112,9 @@ Policy Research, 2*, 31.
 
 #### Part A
 
+::: {.callout-note collapse=true icon=false}
+## CODE FOR REPRODUCIBILITY
+
 ```{r, eval = FALSE}
 mma_2004 <- mma_data |> 
   filter(year == 2004)
@@ -109,6 +122,10 @@ mma_2004 <- mma_data |>
 describe(mma_2004$saidin, IQR = TRUE, skew = FALSE)
 ```
 
+:::
+
+::: {.callout-note icon=false appearance="simple"}
+# Summary Statistics
 ```{r, echo = FALSE}
 library(psych)
 library(dplyr)
@@ -118,6 +135,8 @@ mma_2004 <- mma_data |>
   filter(year == 2004)
 describe(mma_2004$saidin, IQR = TRUE, skew = FALSE)
 ```
+
+:::
 
 The distribution of Saidin Index scores in 2004 is strongly right-skewed, with values ranging from **0 to 11.57**, a **median of 1.19**, and an **IQR of 1.84**. 
 
@@ -140,6 +159,9 @@ It is also important to note that the scores have not shifted uniformly; rather,
 
 #### Part B
 
+::: {.callout-note collapse=true icon=false}
+## CODE FOR REPRODUCIBILITY
+
 ```{r, eval = FALSE}
 # create independent type variable
 mma_types_2004 <- mma_2004 |> 
@@ -161,12 +183,17 @@ summary(anova_types)
 TukeyHSD(anova_types)
 ```
 
+:::
+
 ![Density plots of Saidin scores by hospital type in 2004](task1/figures/plot_types_2004.png){#fig-4}
 
 Since the analysis was limited to 2004, I operationalize "rates of technology adoption" as the Saidin scores for that year. An initial density plot of Saidin scores by hospital type (i.e., nonprofit, government, neither) visualizes significant differences between non-profit hospitals and both other types. Government hospitals and hospitals that are neither non-profit nor government do not seem to differ much from each other.
 
 To investigate if technology adoption rates were significantly different between the hospital types, I conduct a one-way ANOVA with the null hypothesis that the true difference in Saidin scores between hospital types is zero.
 
+::: {.callout-note icon=false appearance="simple"}
+
+# ANOVA Results
 ```{r, echo = FALSE}
 mma_types_2004 <- mma_2004 |> 
   mutate(
@@ -179,16 +206,28 @@ mma_types_2004 <- mma_2004 |>
   )
 anova_types <- aov(saidin ~ hospital_type, data = mma_types_2004)
 summary(anova_types)
+```
+
+:::
+
+::: {.callout-note icon=false appearance="simple"}
+```{r, echo = FALSE}
 TukeyHSD(anova_types)
 ```
+::: 
 
 **Results:** There was a *statistically significant difference* in residuals between at least two of the hospital types (*F*(2, 203) = 25.96, *p* < 0.001). 
 
-As seen in @Fig-3, Tukey’s HSD Test for multiple comparisons *confirmed* that there was a statistically significant difference between both **nonprofit and government** types (*p* < 0.001, 95% CI [0.440, 1.071]) and **nonprofit and neither** types (*p* < 0.001, 95% CI [0.536, 1.312]) but no statistically significant difference between **government and neither** types (*p* = 0.650, 95% CI [-0.614, 0.278]).
+As we anticipated from @Fig-3,[^2] Tukey’s HSD Test for multiple comparisons *confirmed* that there was a statistically significant difference between both **nonprofit and government** types (*p* < 0.001, 95% CI [0.440, 1.071]) and **nonprofit and neither** types (*p* < 0.001, 95% CI [0.536, 1.312]) but no statistically significant difference between **government and neither** types (*p* = 0.650, 95% CI [-0.614, 0.278]).
 
 These results suggest that nonprofit hospitals have different (higher) rates of technology adoption than government hospitals or hospitals that are neither, implying the possibility for government hospital technology improvement. 
 
+[^2]: In the Additional Exploratory Analysis callout in Part A
+
 #### Part C
+
+::: {.callout-note collapse=true icon=false}
+## CODE FOR REPRODUCIBILITY
 
 ```{r, eval = FALSE}
 # linear regression model
@@ -197,12 +236,17 @@ summary(lm_beds)
 confint(lm_beds)
 ```
 
+:::
+
 ![Scatterplot of Saidin scores and beds in 2004](task1/figures/plot_beds_2004.png){#fig-5}
 
 An initial scatterplot of Saidin scores and beds in 2004 (i.e., nonprofit, government, neither) visualizes a positive correlation between hospital size and technological capacity.
 
 Simple linear regression analysis was used to test if the number of beds explained variation in Saidin index scores.
 
+::: {.callout-note icon=false appearance="simple"}
+
+# Linear Regression Results
 ```{r, echo = FALSE}
 # linear regression model
 lm_beds <- lm(saidin ~ beds, data = mma_2004)
@@ -210,11 +254,79 @@ summary(lm_beds)
 confint(lm_beds)
 ```
 
+:::
+
 **Results**: A *significant* regression was found (*F*(1, 1303) = 900.8, *p* < 0.001). The R^2 value of **0.408** indicates that the predictor (`beds`) explained about 40.8% of the variation in Saidin index scores. We can be 95% certain that the true change in Saidin scores as a function of the number of beds is between **5.90e-3 and 6.73e-3**, suggesting a positive correlation.
 
 These results support the idea that the more beds a hospital has, the higher their Saidin scores tend to be, suggesting there is a positive relationship between hospital capacity and technological availability. Hospital capacity could be an indicator of greater access to resources, which lends to higher rates of technology adoption.
 
 ### Exercise 4
+
+::: {.callout-note collapse=true icon=false}
+## CODE FOR REPRODUCIBILITY
+
+```{r, eval = FALSE}
+# event study model
+did_event <- 
+  feols(saidin ~ i(year, treat, ref = 2004) | prov_id + year, data = mma_data)
+
+# table of estimates and CI
+did_estimates <- summary(did_event)
+did_ci <- confint(did_event)
+
+did_estimates_ci <- did_estimates$coefficients |>
+  as.data.frame() |>
+  tibble::rownames_to_column("year") |>
+  left_join(
+    as.data.frame(did_ci) |>
+      tibble::rownames_to_column("year") |>
+      rename(),
+    by = join_by(year)
+  ) |>
+  janitor::clean_names() |>
+  rename(
+    tr_effect = did_estimates_coefficients,
+    tr_hi = x97_5_percent,
+    tr_lo = x2_5_percent
+  ) |>
+  mutate(year = as.numeric(str_extract(year, "\\d{4}")))
+
+# table of means
+did_means <- mma_data |>
+  group_by(year) |>
+  filter(treat == 0) |>
+  summarize(mean(saidin)) |>
+  rename(cr_mean = `mean(saidin)`) |>
+  left_join(
+    mma_data |>
+      group_by(year) |>
+      filter(treat == 1) |>
+      summarize(mean(saidin)) |>
+      rename(tr_mean = `mean(saidin)`)
+  )
+
+# joins tables into new dataset
+mma_did <- did_estimates_ci |>
+  left_join(did_means)
+
+```
+
+:::
+
+```{r, echo=FALSE}
+library(gt)
+load(file = here("task1/data/mma_did.rds"))
+mma_did |> 
+  gt(rowname_col = "year") |> 
+  tab_header(
+    title = md("Effect of MMA on adoption of medical technologies"), 
+    subtitle = md("Estimates from <b style='color: #F8766D;'>fixest::feols()</b> with <b/>95% CI</b>")
+  )
+```
+
+The `fixest::feols()` function was used to estimate a fixed effects linear regression model with clustered standard errors as part of a difference-in-difference analysis, to estimate the effect (`tr_effect`) of receiving a Section 508 waiver on the adoption of medical technologies with 95% confidence interval bounds (`tr_lo`, `tr_hi`). 
+
+Mean Saidin index scores were calculated for the control group (`cr_mean`) and treatment group (`tr_mean`) in each year.
 
 ### Exercise 5
 
