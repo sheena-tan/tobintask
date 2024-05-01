@@ -1,4 +1,4 @@
-# exercise 2 (causal estimates)
+# exercise 2-4 (causal estimates)
 
 library(tidyverse)
 library(here)
