@@ -30,14 +30,14 @@ citation-location: margin
 
 # Introduction
 
-This project uses data provided by Yale's Tobin Center for Economic Policy as part of a data task for a pre-doctoral research position. For the first task, the data draws from a larger research project aiming to understand hospital response to reimbursement rate adjustment received as part of the Medicare Modernization Act (MMA) of 2003, and whether their adoption of medical technologies increased as a result of those adjustments. Task 2 uses data... TKTK ...
+This project uses data provided by Yale's Tobin Center for Economic Policy as part of a data task for a pre-doctoral research position. For the first task, the data draws from a larger research project aiming to understand hospital response to reimbursement rate adjustment received as part of the Medicare Modernization Act (MMA) of 2003, and whether their adoption of medical technologies increased as a result of those adjustments. Task 2 uses sample Medicaid data to investigate the effects of managed care.
 
 ## Task 1
 
 ### Exercise 1
 
 ::: {.callout-note collapse="true" icon="false"}
-## CODE FOR REPRODUCIBILITY
+## Code (for reproducibility)
 
 ```{r, eval = FALSE}
 library(tidyverse)
@@ -66,7 +66,7 @@ An initial inspection of the data revealed no missingness. The provided data fil
 ### Exercise 2
 
 ::: {.callout-note collapse="true" icon="false"}
-## CODE FOR REPRODUCIBILITY
+##  Code  
 
 ```{r, eval = FALSE}
 mma_data |>
@@ -112,7 +112,7 @@ A variable `saidin` was constructed to represent the Saidin Index Score[^1] for 
 #### Part A
 
 ::: {.callout-note collapse="true" icon="false"}
-## CODE FOR REPRODUCIBILITY
+##  Code  
 
 ```{r, eval = FALSE}
 library(psych)
@@ -159,7 +159,7 @@ It is also important to note that the scores have not shifted uniformly; rather,
 #### Part B
 
 ::: {.callout-note collapse="true" icon="false"}
-## CODE FOR REPRODUCIBILITY
+##  Code  
 
 ```{r, eval = FALSE}
 # create mutually exclusive type variable
@@ -223,7 +223,7 @@ These results suggest that nonprofit hospitals have different (higher) rates of 
 #### Part C
 
 ::: {.callout-note collapse="true" icon="false"}
-## CODE FOR REPRODUCIBILITY
+##  Code  
 
 ```{r, eval = FALSE}
 # linear regression model
@@ -252,12 +252,12 @@ confint(lm_beds)
 
 **Results**: A *significant* regression was found (*F*(1, 1303) = 900.8, *p* \< 0.001). The R\^2 value of **0.408** indicates that the predictor (`beds`) explained about 40.8% of the variation in Saidin index scores. We can be 95% certain that the true change in Saidin scores as a function of the number of beds is between **0.00590 and 0.00673**, suggesting a positive correlation.
 
-These results support the idea that the more beds a hospital has, the higher their Saidin scores tend to be, suggesting there is a positive relationship between hospital capacity and technological availability. Hospital capacity could be an indicator of greater access to resources, which lends to higher rates of technology adoption.
+These results support the idea that the more beds a hospital has, the higher their Saidin scores tend to be, suggesting that there is a positive relationship between hospital capacity and technological availability. One possible non-causal explanation for these findings could be that hospital capacity indicates greater access to resources, which also leads to higher rates of technology adoption.
 
 ### Exercise 4
 
 ::: {.callout-note collapse="true" icon="false"}
-## CODE FOR REPRODUCIBILITY
+##  Code  
 
 ```{r, eval = FALSE}
 library(fixest)
@@ -326,7 +326,7 @@ Mean Saidin index scores were also calculated for the control group (`cr_mean`) 
 ### Exercise 5
 
 ::: {.callout-note collapse="true" icon="false"}
-## CODE FOR REPRODUCIBILITY
+##  Code  
 
 ```{r, eval = FALSE}
 library(ggtext)
@@ -388,6 +388,7 @@ The difference-in-difference model suggests that Section 508 waivers resulted in
 From the results of our difference-in-difference analysis, we can be 95% confident that MMA reimbursement rate adjustments had a positive impact on hospital technology adoption. As visualized in @fig-6, the yearly means of the treatment group still differed significantly from the counterfactual, or what would have been the treatment group without the effects of the policy intervention.
 
 In our analysis we assume that:
+
 1. in the absence of the policy intervention, the average outcomes of the treatment and control groups would have followed parallel paths over time;
 2. there were no concurrent events or shocks occurring at the same time as the treatment that could have independently affected the outcome variable; and
 3. the effect of the treatment did not become significantly stronger over time. 
@@ -395,6 +396,7 @@ In our analysis we assume that:
 In the event that these assumptions do not hold, the difference-in-differences estimator would no longer be valid, as the differences in the trends would not be able to be attributed to the treatment itself and the treatment alone.
 
 In the case of the present analysis, we do see that:
+
 1. the group means between the treatment and control groups before the year of adoption follow relatively parallel paths, with a slightly higher increase for the treatment group in 2003;
 2. no major domestic health or economic policies were concurrently adopted in 2003 or 2004 beyond the Jobs and Growth Tax Relief Reconciliation Act, but the act did not particularly improve economic growth[^3]; and
 3. acquiring new hospital technologies may have led to the acquisition of more, as new technologies open access to more patients and more efficient practices; but we actually see a slowing growth rate after 2007, suggesting that this effect may not be significant.
@@ -402,3 +404,142 @@ In the case of the present analysis, we do see that:
 [^3]: [Center on Budget and Policy Priorities (2017)](https://www.cbpp.org/research/the-legacy-of-the-2001-and-2003-bush-tax-cuts#_ftn13)
 
 ## Task 2
+
+### Exercise 1
+
+::: {.callout-note collapse="true" icon="false"}
+##  Code  
+```{r, eval = FALSE}
+library(tidyverse)
+library(here)
+library(tseries)
+
+# Inspect data ----
+skimr::skim(healthcare_data)
+
+# confirm random auto-assignment
+dummy_auto <- healthcare_data |>
+  mutate(plan = ifelse(plan == "Plan_A", 1, 0)) |>
+  filter(assignment_type == "Automatically Assigned")
+
+runs.test(as.factor(dummy_auto$plan))
+
+# test for random choice
+dummy_choice <- healthcare_data |>
+  mutate(plan = ifelse(plan == "Plan_A", 1, 0)) |>
+  filter(assignment_type == "Member Choice")
+
+runs.test(as.factor(dummy_choice$plan))
+
+```
+
+:::
+
+The data was read in and all character variables were retyped as factors, resulting 21300 observations of 7 variables. An initial inspection of the data revealed no missingness, duplicates, or extreme imbalance between levels. 
+
+A runs test completed using function `tseries::runs.test()` provides support for randomness in the plan assignment for automatically assigned Medicaid members. The test was non-significant at a 95% confidence level (*p* = **0.1999**), meaning that we do not reject the null hypothesis that the data is random. 
+
+The same method was used to test for randomness in the plan assignment for Medicaid members who chose their plan. The test was also non-significant at a 95% confidence level (*p* = **0.709**), meaning that we do not reject the null hypothesis that the data is random. 
+
+The higher p-value for the choice assignment versus automatic assignment could be due to differences in sample size. The larger the sample size, the more normal the distribution will be. Since the automatically assigned Medicaid members were the minority, there could have been more natural variation, resulting in the appearance of less randomness.
+
+### Exercise 2
+
+::: {.callout-note collapse="true" icon="false"}
+##  Code  
+```{r, eval = FALSE}
+library(MatchIt)
+library(marginaleffects)
+
+# propensity score matching
+psm_quick <- 
+  matchit(
+    plan ~ gender + assignment_type + health_status + language, 
+    data = healthcare_data, 
+    method = "quick",
+    estimand = "ATE"
+  )
+
+# check balance
+plot(psm_quick, type = "density", interactive = FALSE,
+     which.xs = ~ assignment_type + health_status + language)
+
+plot(summary(psm_quick))
+
+# estimate ATE
+psm_data <- match.data(psm_quick)
+
+psm_fit <- glm(
+  healthcare_spend ~ plan * (gender + assignment_type + health_status + language), 
+  data = psm_data, weights = weights
+)
+
+avg_comparisons(
+  psm_fit,
+  variables = "plan",
+  wts = "weights"
+  )
+
+```
+
+:::
+
+I chose to use propensity score matching to obtain a causal estimate of the managed care plan's effect on health care spending. My motivation was to match individuals in Plan A with individuals in Plan B who have similar observable characteristics (e.g., demographics) but differ in plan assignment. I could then attribute differences in healthcare spending between the matched individuals to the causal effect of plan assignment. 
+
+In the analysis, Plan B was considered the treatment, and Plan A the control, such that the estimate would describe the difference in spending between Plan B - Plan A. 
+
+I chose to use the general full matching method `quick` using the `MatchIt::matchit()` function with logistic regression, because we are looking to find the average treatment effect (ATE) of categorical variable in a large dataset. This matching specification yielded exact balance. In other words, the absolute standard mean difference between matched pairs was zero for all predictors (See @fig-7). Full matching uses all treated and all control units, so no units were discarded by the matching.
+
+![Love plot before and after PSM](task2/figures/psm_plot.png){#fig-7}
+
+To estimate the ATE and its standard error, I fit a logistic regression model using `glm()` with healthcare spending as the outcome and the plan "treatment", covariates, and their interaction as predictors, and used the full matching weights to make the estimation using the `marginaleffects::comparisons()` function. 
+
+**Results**: The estimated effect was **-5.33** (*SE* = 1.34, *p* < 0.001, 95% CI [-7.95, -2.71]), indicating that the average effect of the treatment for those who received it is to decrease healthcare spending.
+
+### Exercise 3
+
+::: {.callout-note collapse="true" icon="false"}
+##  Code  
+
+```{r, eval = FALSE}
+# simple average
+aggregate(healthcare_spend ~ plan, data = healthcare_data, FUN = mean)
+
+# regression model with fixed effects
+lm_fit <- glm(healthcare_spend ~ plan + gender + health_status + language, data = healthcare_data)
+
+summary(lm_fit)
+```
+
+:::
+
+**Simple Average**: A straightforward way to begin to explore the causal effect of healthcare plan on spending would be to take simple average of spending for each plan group, where the effect estimate would be the difference between the two averages. The average of healthcare spending for Plan A was 190.6, as opposed to Plan B's average of 168.6. This difference (22.0) is almost four times larger than the effect estimate found through the PSM analysis. 
+
+**Why the difference?** This discrepancy could be the result of confounding factors that are not taken into consideration in this simple average analysis, like the demographic variables, which may also directly impact spending and be distributed differently across each plan. For example, someone with a particular health condition might prefer one plan over another, but that health condition may also require significantly more spending than someone without that health condition.
+
+**Regression**: A regression model can help to control for such demographic variables that may be correlated with both the choice of plan and healthcare spending. To obtain a causal estimate, I fitted a logistic regression model using `glm()` with healthcare spending as the outcome and the plan as the "treatment", with fixed effects for each of the demographics besides assignment type. The estimate this time was **-5.40** (*SE* = 1.362), significant at an alpha = 0.001 level. After considering for demographic variables, the causal estimate was much closer to the estimated effect from the PSM analysis (**-5.33**), as anticipated.
+
+### Exercise 4
+
+::: {.callout-note collapse="true" icon="false"}
+##  Code  
+
+```{r, eval = FALSE}
+# modified psm_fit
+psm_fit_fixed <- glm(
+  healthcare_spend ~ plan + gender + health_status + language,
+  data = psm_data, weights = weights
+)
+
+avg_comparisons(
+  psm_fit_fixed,
+  variables = "plan",
+  wts = "weights"
+)
+```
+
+::: 
+
+Using fixed effects rather than the interaction terms in the causal model from Question 2 does not impact the causal estimate. Since both fixed effects and interaction terms aim to control for potential confounding factors in the causal model, the lack of impact could mean that the treatment effect is homogenous across different levels of the covariates. In other words, controlling for fixed effects to deal with the confounding may already adequately explain the variation in spending across plans. 
+
+### Thank you for your time and consideration!
