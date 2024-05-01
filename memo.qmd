@@ -30,20 +30,22 @@ citation-location: margin
 
 # Introduction
 
-This project uses data provided by Yale's Tobin Center for Economic Policy as part of a data task for a pre-doctoral research position. The data draws from a larger research project aiming to understand hospital response to reimbursement rate adjustment received as part of the Medicare Modernization Act (MMA) of 2003, and whether their adoption of medical technologies increased as a result of those adjustments for Task 1. Task 2 uses data... TKTK ...
+This project uses data provided by Yale's Tobin Center for Economic Policy as part of a data task for a pre-doctoral research position. For the first task, the data draws from a larger research project aiming to understand hospital response to reimbursement rate adjustment received as part of the Medicare Modernization Act (MMA) of 2003, and whether their adoption of medical technologies increased as a result of those adjustments. Task 2 uses data... TKTK ...
 
 ## Task 1
 
 ### Exercise 1
 
-::: {.callout-note collapse=true icon=false}
+::: {.callout-note collapse="true" icon="false"}
 ## CODE FOR REPRODUCIBILITY
 
 ```{r, eval = FALSE}
-skimr::skim(mma_main)
-skimr::skim(mma_treat)
+library(tidyverse)
+
 # check missingness: n_missing = 0 for all variables
 # check duplicates: n_unique = 1305 for both datasets
+skimr::skim(mma_main)
+skimr::skim(mma_treat)
 
 # Clean primary key ----
 mma_main_join <- mma_main |>
@@ -57,14 +59,13 @@ mma_data <- mma_treat_join |>
   left_join(mma_main_join)
 
 ```
-
 :::
 
 An initial inspection of the data revealed no missingness. The provided data files were joined using provider ID as a primary key, resulting in a merged dataset with 13050 unique observations of 38 variables.
 
 ### Exercise 2
 
-::: {.callout-note collapse=true icon=false}
+::: {.callout-note collapse="true" icon="false"}
 ## CODE FOR REPRODUCIBILITY
 
 ```{r, eval = FALSE}
@@ -100,32 +101,32 @@ mma_data <- mma_saidin |>
   left_join(mma_data)
 
 ```
-
 :::
 
 A variable `saidin` was constructed to represent the Saidin Index Score[^1] for all hospitals in each year and joined with the merged dataset to create the working dataset with **13050 observations** of **39 variables**. This index characterizes a hospital's range of available technologies, weighted for their rarity, and provides a way through which to investigate how hospital technology grows and changes, particularly in response to interventions.
 
-[^1]: Baker, L. & Spetz, J. (1999). Managed care and medical technology growth. *Frontiers in Health
-Policy Research, 2*, 31.
+[^1]: Baker, L. & Spetz, J. (1999). Managed care and medical technology growth. *Frontiers in Health Policy Research, 2*, 31.
 
 ### Exercise 3
 
 #### Part A
 
-::: {.callout-note collapse=true icon=false}
+::: {.callout-note collapse="true" icon="false"}
 ## CODE FOR REPRODUCIBILITY
 
 ```{r, eval = FALSE}
+library(psych)
+
 mma_2004 <- mma_data |> 
   filter(year == 2004)
 
 describe(mma_2004$saidin, IQR = TRUE, skew = FALSE)
 ```
-
 :::
 
-::: {.callout-note icon=false appearance="simple"}
+::: {.callout-note icon="false" appearance="simple"}
 # Summary Statistics
+
 ```{r, echo = FALSE}
 library(psych)
 library(dplyr)
@@ -135,36 +136,34 @@ mma_2004 <- mma_data |>
   filter(year == 2004)
 describe(mma_2004$saidin, IQR = TRUE, skew = FALSE)
 ```
-
 :::
 
-The distribution of Saidin Index scores in 2004 is strongly right-skewed, with values ranging from **0 to 11.57**, a **median of 1.19**, and an **IQR of 1.84**. 
+The distribution of Saidin Index scores in 2004 is strongly right-skewed, with values ranging from **0 to 11.57**, a **median of 1.19**, and an **IQR of 1.84**.
 
 ![Density-boxplot of Saidin Index scores in 2004](task1/figures/saidin_2004.png){#fig-1}
 
 As the Saidin Index is helpful for characterizing technology growth rates, the distributions by year can also be found below:
 
-::: {.callout-tip collapse=true}
+::: {.callout-tip collapse="true"}
 ## ADDITIONAL EXPLORATORY ANALYSIS
 
 ![Density ridge plot of Saidin Index scores by year](task1/figures/saidin_density_ridge.png){#fig-2}
 
 ![Stacked barplots of Saidin Index scores by year](task1/figures/saidin_boxplot.png){#fig-3}
 
-A period of rapid relative growth looks to have occurred between 2002 and 2005 (@fig-3), starting in 2003 (@fig-2), the same year that the Medicare Modernization Act (MMA) was initiated. However, this rapid growth has since slowed, with growth between 2007 and 2010 becoming increasingly limited. 
+A period of rapid relative growth looks to have occurred between 2002 and 2005 (@fig-3), starting in 2003 (@fig-2), the same year that the Medicare Modernization Act (MMA) was initiated. However, this rapid growth has since slowed, with growth between 2007 and 2010 becoming increasingly limited.
 
-It is also important to note that the scores have not shifted uniformly; rather, their distribution has become more spread out, with a large number of outliers developing on the higher end (better technology availability). Should these outliers correlate with those hospitals receiving MMA treatment, the data would suggest ***support for the intervention's positive impact***. 
-
+It is also important to note that the scores have not shifted uniformly; rather, their distribution has become more spread out, with a large number of outliers developing on the higher end (better technology availability). Should these outliers correlate with those hospitals receiving MMA treatment, the data would suggest ***support for the intervention's positive impact***.
 :::
 
 #### Part B
 
-::: {.callout-note collapse=true icon=false}
+::: {.callout-note collapse="true" icon="false"}
 ## CODE FOR REPRODUCIBILITY
 
 ```{r, eval = FALSE}
-# create independent type variable
-mma_types_2004 <- mma_2004 |> 
+# create mutually exclusive type variable
+mma_types <- mma_2004 |> 
   mutate(
     hospital_type = case_when(
       nonprof == 1 & govt == 0 ~ "nonprof",
@@ -174,28 +173,26 @@ mma_types_2004 <- mma_2004 |>
     )
   )
 
-# assuming normality due to sample size
-# one-way ANOVA
-anova_types <- aov(saidin ~ hospital_type, data = mma_types_2004)
+# assuming normality due to sample size: one-way ANOVA
+anova_types <- aov(saidin ~ hospital_type, data = mma_types)
 summary(anova_types)
 
 # Tukey's test
 TukeyHSD(anova_types)
 ```
-
 :::
 
 ![Density plots of Saidin scores by hospital type in 2004](task1/figures/plot_types_2004.png){#fig-4}
 
-Since the analysis was limited to 2004, I operationalize "rates of technology adoption" as the Saidin scores for that year. An initial density plot of Saidin scores by hospital type (i.e., nonprofit, government, neither) visualizes significant differences between non-profit hospitals and both other types. Government hospitals and hospitals that are neither non-profit nor government do not seem to differ much from each other.
+Since the analysis was limited to 2004, I operationalize "rates of technology adoption" as the Saidin scores for that year. An initial density plot of Saidin scores by hospital type (i.e., nonprofit, government, neither) visualizes **seemingly significant differences** between non-profit hospitals and both other types. Government hospitals and hospitals that are neither non-profit nor government do not seem to differ much from each other.
 
 To investigate if technology adoption rates were significantly different between the hospital types, I conduct a one-way ANOVA with the null hypothesis that the true difference in Saidin scores between hospital types is zero.
 
-::: {.callout-note icon=false appearance="simple"}
-
+::: {.callout-note icon="false" appearance="simple"}
 # ANOVA Results
+
 ```{r, echo = FALSE}
-mma_types_2004 <- mma_2004 |> 
+mma_types <- mma_2004 |> 
   mutate(
     hospital_type = case_when(
       nonprof == 1 & govt == 0 ~ "nonprof",
@@ -204,29 +201,28 @@ mma_types_2004 <- mma_2004 |>
       TRUE ~ NA_character_
     )
   )
-anova_types <- aov(saidin ~ hospital_type, data = mma_types_2004)
+anova_types <- aov(saidin ~ hospital_type, data = mma_types)
 summary(anova_types)
 ```
-
 :::
 
-::: {.callout-note icon=false appearance="simple"}
+::: {.callout-note icon="false" appearance="simple"}
 ```{r, echo = FALSE}
 TukeyHSD(anova_types)
 ```
-::: 
+:::
 
-**Results:** There was a *statistically significant difference* in residuals between at least two of the hospital types (*F*(2, 203) = 25.96, *p* < 0.001). 
+**Results:** There was a *statistically significant difference* in residuals between at least two of the hospital types (*F*(2, 203) = 25.96, *p* \< 0.001).
 
-As we anticipated from @Fig-3,[^2] Tukey’s HSD Test for multiple comparisons *confirmed* that there was a statistically significant difference between both **nonprofit and government** types (*p* < 0.001, 95% CI [0.440, 1.071]) and **nonprofit and neither** types (*p* < 0.001, 95% CI [0.536, 1.312]) but no statistically significant difference between **government and neither** types (*p* = 0.650, 95% CI [-0.614, 0.278]).
-
-These results suggest that nonprofit hospitals have different (higher) rates of technology adoption than government hospitals or hospitals that are neither, implying the possibility for government hospital technology improvement. 
+As we anticipated from @Fig-3,[^2] Tukey’s HSD Test for multiple comparisons *confirmed* that there was a statistically significant difference between both **nonprofit and government** types (*p* \< 0.001, 95% CI \[0.440, 1.071\]) and **nonprofit and neither** types (*p* \< 0.001, 95% CI \[0.536, 1.312\]) but no statistically significant difference between **government and neither** types (*p* = 0.650, 95% CI \[-0.614, 0.278\]).
 
 [^2]: In the Additional Exploratory Analysis callout in Part A
 
+These results suggest that nonprofit hospitals have different (higher) rates of technology adoption than government hospitals or hospitals that are neither, implying the possibility for government hospital technology improvement.
+
 #### Part C
 
-::: {.callout-note collapse=true icon=false}
+::: {.callout-note collapse="true" icon="false"}
 ## CODE FOR REPRODUCIBILITY
 
 ```{r, eval = FALSE}
@@ -235,37 +231,37 @@ lm_beds <- lm(saidin ~ beds, data = mma_2004)
 summary(lm_beds)
 confint(lm_beds)
 ```
-
 :::
 
 ![Scatterplot of Saidin scores and beds in 2004](task1/figures/plot_beds_2004.png){#fig-5}
 
-An initial scatterplot of Saidin scores and beds in 2004 (i.e., nonprofit, government, neither) visualizes a positive correlation between hospital size and technological capacity.
+An initial scatterplot of Saidin scores and beds in 2004 (i.e., nonprofit, government, neither) visualizes a **seemingly positive correlation** between hospital size and technological capacity.
 
 Simple linear regression analysis was used to test if the number of beds explained variation in Saidin index scores.
 
-::: {.callout-note icon=false appearance="simple"}
-
+::: {.callout-note icon="false" appearance="simple"}
 # Linear Regression Results
+
 ```{r, echo = FALSE}
 # linear regression model
 lm_beds <- lm(saidin ~ beds, data = mma_2004)
 summary(lm_beds)
 confint(lm_beds)
 ```
-
 :::
 
-**Results**: A *significant* regression was found (*F*(1, 1303) = 900.8, *p* < 0.001). The R^2 value of **0.408** indicates that the predictor (`beds`) explained about 40.8% of the variation in Saidin index scores. We can be 95% certain that the true change in Saidin scores as a function of the number of beds is between **5.90e-3 and 6.73e-3**, suggesting a positive correlation.
+**Results**: A *significant* regression was found (*F*(1, 1303) = 900.8, *p* \< 0.001). The R\^2 value of **0.408** indicates that the predictor (`beds`) explained about 40.8% of the variation in Saidin index scores. We can be 95% certain that the true change in Saidin scores as a function of the number of beds is between **0.00590 and 0.00673**, suggesting a positive correlation.
 
 These results support the idea that the more beds a hospital has, the higher their Saidin scores tend to be, suggesting there is a positive relationship between hospital capacity and technological availability. Hospital capacity could be an indicator of greater access to resources, which lends to higher rates of technology adoption.
 
 ### Exercise 4
 
-::: {.callout-note collapse=true icon=false}
+::: {.callout-note collapse="true" icon="false"}
 ## CODE FOR REPRODUCIBILITY
 
 ```{r, eval = FALSE}
+library(fixest)
+
 # event study model
 did_event <- 
   feols(saidin ~ i(year, treat, ref = 2004) | prov_id + year, data = mma_data)
@@ -305,12 +301,11 @@ did_means <- mma_data |>
       rename(tr_mean = `mean(saidin)`)
   )
 
-# joins tables into new dataset
+# join tables into new dataset
 mma_did <- did_estimates_ci |>
   left_join(did_means)
 
 ```
-
 :::
 
 ```{r, echo=FALSE}
@@ -324,12 +319,86 @@ mma_did |>
   )
 ```
 
-The `fixest::feols()` function was used to estimate a fixed effects linear regression model with clustered standard errors as part of a difference-in-difference analysis, to estimate the effect (`tr_effect`) of receiving a Section 508 waiver on the adoption of medical technologies with 95% confidence interval bounds (`tr_lo`, `tr_hi`). 
+The `fixest::feols()` function was used to estimate a fixed effects linear regression model with clustered standard errors as part of a difference-in-difference analysis, to estimate the effect (`tr_effect`) of receiving a Section 508 waiver on the adoption of medical technologies with 95% confidence interval bounds (`tr_lo`, `tr_hi`).
 
-Mean Saidin index scores were calculated for the control group (`cr_mean`) and treatment group (`tr_mean`) in each year.
+Mean Saidin index scores were also calculated for the control group (`cr_mean`) and treatment group (`tr_mean`) in each year.
 
 ### Exercise 5
 
+::: {.callout-note collapse="true" icon="false"}
+## CODE FOR REPRODUCIBILITY
+
+```{r, eval = FALSE}
+library(ggtext)
+
+# 95 CI error bars
+mma_test <- mma_did |>
+  filter(year >= 2004) |>
+  mutate(
+    tr_ref = tr_mean - tr_effect,
+    tr_ref_lo = tr_mean - tr_hi,
+    tr_ref_hi = tr_mean - tr_lo
+  ) |>
+  full_join(
+    mma_did |>
+      filter(year < 2004)
+  )
+
+# visualization: significant effect
+did_plot <- mma_test |>
+  ggplot(aes(year)) +
+  geom_line(aes(y = cr_mean), color = "#619CFF", alpha = 0.5) +
+  geom_point(aes(y = cr_mean), color = "#619CFF") +
+  geom_line(aes(y = tr_ref), color = "#00BA38", linetype = "dashed", alpha = 0.7) +
+  geom_point(aes(y = tr_ref), color = "#00BA38") +
+  geom_errorbar(aes(ymin = tr_ref_lo, ymax = tr_ref_hi), color = "#00BA38", width = 0.1) +
+  geom_ribbon(aes(ymin = tr_ref_lo, ymax = tr_ref_hi), fill = "#00BA38", alpha = 0.1) +
+  geom_point(aes(y = tr_mean), color = "#F8766D") +
+  geom_line(aes(y = tr_mean), color = "#F8766D", alpha = 0.5) +
+  geom_vline(xintercept = 2004, linetype = "dotted") +
+  scale_x_continuous(n.breaks = 9) +
+  scale_y_continuous(n.breaks = 6) +
+  theme_minimal() +
+  theme(
+    panel.grid.minor.x = element_blank(),
+    axis.title.x = element_blank(),
+    plot.title.position = "plot",
+    plot.title = element_markdown(),
+    plot.subtitle = element_markdown()
+  ) +
+  labs(
+    y = "Saidin Index Scores",
+    title = "Technology adoption rates
+    <b style='color: #000000;'>significantly increase </b><b style='color: #00BA38;'>before</b>
+    and <b style='color: #F8766D;'>after</b> MMA."
+  ) +
+  annotate("text", x = 2008, y = 3.5, label = "control", color = "#619CFF", size = 3) +
+  annotate("text", x = 2005.2, y = 6.4, label = "treatment", color = "#F8766D" , size = 3) +
+  annotate("text", x = 2009.1, y = 7.4, label = "counterfactual", color = "#00BA38" , size = 2.7) +
+  annotate("text", x = 2004, y = 8.5, label = "Year of\nAdoption", size = 3)
+```
+
+:::
+
+![Difference-in-Differences Model](task1/figures/did_plot.png){#fig-6}
+
+The difference-in-difference model suggests that Section 508 waivers resulted in a *significant increase in technology adoption rates* in hospitals. We see in @fig-6 that after accounting for treatment effects, the yearly means of the treatment group after the policy intervention in 2004 still **differ significantly** (95% CI) from the yearly means of the counterfactual group.
+
 ### Exercise 6
+From the results of our difference-in-difference analysis, we can be 95% confident that MMA reimbursement rate adjustments had a positive impact on hospital technology adoption. As visualized in @fig-6, the yearly means of the treatment group still differed significantly from the counterfactual, or what would have been the treatment group without the effects of the policy intervention.
+
+In our analysis we assume that:
+1. in the absence of the policy intervention, the average outcomes of the treatment and control groups would have followed parallel paths over time;
+2. there were no concurrent events or shocks occurring at the same time as the treatment that could have independently affected the outcome variable; and
+3. the effect of the treatment did not become significantly stronger over time. 
+
+In the event that these assumptions do not hold, the difference-in-differences estimator would no longer be valid, as the differences in the trends would not be able to be attributed to the treatment itself and the treatment alone.
+
+In the case of the present analysis, we do see that:
+1. the group means between the treatment and control groups before the year of adoption follow relatively parallel paths, with a slightly higher increase for the treatment group in 2003;
+2. no major domestic health or economic policies were concurrently adopted in 2003 or 2004 beyond the Jobs and Growth Tax Relief Reconciliation Act, but the act did not particularly improve economic growth[^3]; and
+3. acquiring new hospital technologies may have led to the acquisition of more, as new technologies open access to more patients and more efficient practices; but we actually see a slowing growth rate after 2007, suggesting that this effect may not be significant.
+
+[^3]: [Center on Budget and Policy Priorities (2017)](https://www.cbpp.org/research/the-legacy-of-the-2001-and-2003-bush-tax-cuts#_ftn13)
 
 ## Task 2

@@ -3,8 +3,11 @@
 library(tidyverse)
 library(here)
 library(ggridges)
+library(ggdist)
+library(patchwork)
 library(ggtext)
 library(viridis)
+library(psych)
 
 # load data
 load(here("task1/data/mma_data.rds"))
@@ -124,7 +127,7 @@ mma_types <- mma_2004 |>
   )
 
 # visualization: expecting bigger diff between nonprof and others than govt vs neither
-plot_types_2004 <- mma_types_2004 |>
+plot_types_2004 <- mma_types |>
   ggplot(aes(saidin)) +
   geom_density(aes(color = hospital_type)) +
   theme_ggdist() +
@@ -132,14 +135,12 @@ plot_types_2004 <- mma_types_2004 |>
     axis.title.y = element_blank(),
     legend.position = 'none',
     plot.title.position = "plot",
-    plot.subtitle = element_markdown(lineheight = 0.01)
+    plot.title = element_markdown()
   ) +
   labs(
     x = "Saidin Index Score",
-    subtitle = "<b style='color: #619CFF;'>Non-profit</b> hospitals differ more from
-    <b style='color: #F8766D;'>government</b> hospitals and hospitals that are
-    <b style='color: #00BA38;'>neither</b>
-    \nthan they do from each other in terms of <b>technology adoption</b>."
+    title = "Technology adoption rates at <b style='color: #619CFF;'>non-profit</b> hospitals
+    seem to <b>differ significantly</b> from other hospitals."
   ) +
   annotate("text", x = 3.4, y = 0.2, label = "non-profit", color = "#619CFF", size = 3) +
   annotate("text", x = 1.5, y = 0.492, label = "government", color = "#F8766D" , size = 3) +
@@ -147,15 +148,14 @@ plot_types_2004 <- mma_types_2004 |>
 
 # assuming normality due to sample size
 # one-way ANOVA
-anova_types <- aov(saidin ~ hospital_type, data = mma_types_2004)
+anova_types <- aov(saidin ~ hospital_type, data = mma_types)
 summary(anova_types)
 
 # Tukey's test
 TukeyHSD(anova_types)
 
 # write out plot
-ggsave(here("task1/figures/plot_types_2004.png"), plot_types_2004,
-       width = 7.8, height = 6.0, units = "in")
+ggsave(here("task1/figures/plot_types_2004.png"), plot_types_2004)
 
 ###############################################################################
 # EXERCISE 3c
@@ -174,7 +174,11 @@ plot_beds_2004 <- mma_2004 |>
     title = "Hospitals with more beds seem to have higher Saidin index scores.",
     subtitle = "Hospital size and technological capacity appear positively correlated."
   ) +
-  theme(plot.title.position = "plot")
+  theme(
+    plot.title.position = "plot",
+    plot.title = element_markdown(),
+    plot.subtitle = element_markdown()
+  )
 
 # logistic regression
 lm_beds <- lm(saidin ~ beds, data = mma_2004)
